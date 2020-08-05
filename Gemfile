@@ -24,6 +24,9 @@ gem 'turbolinks', '~> 5'
 
 group :development do
   gem 'awesome_print'
+  gem 'guard'
+  gem 'guard-cucumber', '~> 2.1.2'
+  gem 'guard-rspec', '~> 4.7.2'
   gem 'listen', '>= 3.0.5', '< 3.2'
   gem 'pry-rails'
   gem 'spring'
@@ -33,7 +36,6 @@ end
 
 group :test do
   gem 'capybara'
-  gem 'guard'
   gem 'rails-controller-testing'
 end
 

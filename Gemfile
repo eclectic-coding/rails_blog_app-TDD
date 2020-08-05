@@ -27,6 +27,7 @@ group :development do
   gem 'guard'
   gem 'guard-cucumber', '~> 2.1.2'
   gem 'guard-rspec', '~> 4.7.2'
+  gem 'libnotify'
   gem 'listen', '>= 3.0.5', '< 3.2'
   gem 'pry-rails'
   gem 'spring'

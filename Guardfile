@@ -1,64 +1,19 @@
-# Defines the matching rules for Guard.
-guard :minitest, spring: "bin/rails test", all_on_start: false do
-  watch(%r{^test/(.*)/?(.*)_test\.rb$})
-  watch('test/test_helper.rb') { 'test' }
-  watch('config/routes.rb') { interface_tests }
-  watch(%r{app/views/layouts/*}) { interface_tests }
-  watch(%r{^app/models/(.*?)\.rb$}) do |matches|
-    "test/models/#{matches[1]}_test.rb"
-  end
-  watch(%r{^app/controllers/(.*?)_controller\.rb$}) do |matches|
-    resource_tests(matches[1])
-  end
-  watch(%r{^app/views/([^/]*?)/.*\.html\.erb$}) do |matches|
-    ["test/controllers/#{matches[1]}_controller_test.rb"] +
-      integration_tests(matches[1])
-  end
-  watch(%r{^app/helpers/(.*?)_helper\.rb$}) do |matches|
-    integration_tests(matches[1])
-  end
-  watch('app/views/layouts/application.html.erb') do
-    'test/integration/site_layout_test.rb'
-  end
-  watch('app/helpers/sessions_helper.rb') do
-    integration_tests << 'test/helpers/sessions_helper_test.rb'
-  end
-  watch('app/controllers/sessions_controller.rb') do
-    ['test/controllers/sessions_controller_test.rb',
-     'test/integration/users_login_test.rb']
-  end
-  watch('app/controllers/account_activations_controller.rb') do
-    'test/integration/users_signup_test.rb'
-  end
-  watch(%r{app/views/users/*}) do
-    resource_tests('users') +
-      ['test/integration/microposts_interface_test.rb']
-  end
-end
+# A sample Guardfile
+# More info at https://github.com/guard/guard#readme
 
-# Returns the integration tests corresponding to the given resource.
-def integration_tests(resource = :all)
-  if resource == :all
-    Dir["test/integration/*"]
-  else
-    Dir["test/integration/#{resource}_*.rb"]
-  end
-end
+## Uncomment and set this to only include directories you want to watch
+# directories %w(app lib config test spec features) \
+#  .select{|d| Dir.exists?(d) ? d : UI.warning("Directory #{d} does not exist")}
 
-# Returns all tests that hit the interface.
-def interface_tests
-  integration_tests << "test/controllers/"
-end
-
-# Returns the controller tests corresponding to the given resource.
-def controller_test(resource)
-  "test/controllers/#{resource}_controller_test.rb"
-end
-
-# Returns all tests for the given resource.
-def resource_tests(resource)
-  integration_tests(resource) << controller_test(resource)
-end
+## Note: if you are using the `directories` clause above and you are not
+## watching the project directory ('.'), then you will want to move
+## the Guardfile to a watched dir and symlink it back, e.g.
+#
+#  $ mkdir config
+#  $ mv Guardfile config/
+#  $ ln -s config/Guardfile .
+#
+# and, you'll have to watch "config/Guardfile" instead of "Guardfile"
 
 cucumber_options = {
   # Below are examples overriding defaults
@@ -76,52 +31,13 @@ cucumber_options = {
   # notification: false
 }
 
-guard "cucumber", cucumber_options do
+guard 'cucumber', cucumber_options do
   watch(%r{^features/.+\.feature$})
-  watch(%r{^features/support/.+$}) { "features" }
+  watch(%r{^features/support/.+$}) { 'features' }
 
   watch(%r{^features/step_definitions/(.+)_steps\.rb$}) do |m|
-    Dir[File.join("**/#{m[1]}.feature")][0] || "features"
+    Dir[File.join("**/#{m[1]}.feature")][0] || 'features'
   end
-end
-
-guard 'livereload' do
-  extensions = {
-    css: :css,
-    scss: :css,
-    sass: :css,
-    js: :js,
-    coffee: :js,
-    html: :html,
-    png: :png,
-    gif: :gif,
-    jpg: :jpg,
-    jpeg: :jpeg,
-    # less: :less, # uncomment if you want LESS stylesheets done in browser
-  }
-
-  rails_view_exts = %w(erb haml slim)
-
-  # file types LiveReload may optimize refresh for
-  compiled_exts = extensions.values.uniq
-  watch(%r{public/.+\.(#{compiled_exts * '|'})})
-
-  extensions.each do |ext, type|
-    watch(%r{
-          (?:app|vendor)
-          (?:/assets/\w+/(?<path>[^.]+) # path+base without extension
-           (?<ext>\.#{ext})) # matching extension (must be first encountered)
-          (?:\.\w+|$) # other extensions
-          }x) do |m|
-      path = m[1]
-      "/assets/#{path}.#{type}"
-    end
-  end
-
-  # file needing a full reload of the page anyway
-  watch(%r{app/views/.+\.(#{rails_view_exts * '|'})$})
-  watch(%r{app/helpers/.+\.rb})
-  watch(%r{config/locales/.+\.yml})
 end
 
 # Note: The cmd option is now required due to the increasing number of ways
@@ -133,8 +49,8 @@ end
 #  * zeus: 'zeus rspec' (requires the server to be started separately)
 #  * 'just' rspec: 'rspec'
 
-guard :rspec, cmd: "bundle exec rspec" do
-  require "guard/rspec/dsl"
+guard :rspec, cmd: 'rspec' do
+  require 'guard/rspec/dsl'
   dsl = Guard::RSpec::Dsl.new(self)
 
   # Feel free to open issues for suggestions and improvements
@@ -154,6 +70,8 @@ guard :rspec, cmd: "bundle exec rspec" do
   dsl.watch_spec_files_for(rails.app_files)
   dsl.watch_spec_files_for(rails.views)
 
+  watch(%r{^app/controllers/(.+)_(controller)\.rb$})  { 'spec/features' }
+  watch(%r{^app/models/(.+)\.rb$})  { 'spec/features' }
   watch(rails.controllers) do |m|
     [
       rspec.spec.call("routing/#{m[1]}_routing"),
@@ -164,16 +82,18 @@ guard :rspec, cmd: "bundle exec rspec" do
 
   # Rails config changes
   watch(rails.spec_helper)     { rspec.spec_dir }
-  watch(rails.routes)          { "#{rspec.spec_dir}/routing" }
+  watch(rails.routes)          { 'spec' } # { "#{rspec.spec_dir}/routing" }
   watch(rails.app_controller)  { "#{rspec.spec_dir}/controllers" }
 
   # Capybara features specs
-  watch(rails.view_dirs)     { |m| rspec.spec.call("features/#{m[1]}") }
+  watch(rails.view_dirs)     { 'spec/features' } # { |m| rspec.spec.call("features/#{m[1]}") }
   watch(rails.layouts)       { |m| rspec.spec.call("features/#{m[1]}") }
 
   # Turnip features and steps
   watch(%r{^spec/acceptance/(.+)\.feature$})
   watch(%r{^spec/acceptance/steps/(.+)_steps\.rb$}) do |m|
-    Dir[File.join("**/#{m[1]}.feature")][0] || "spec/acceptance"
+    Dir[File.join("**/#{m[1]}.feature")][0] || 'spec/acceptance'
   end
 end
+
+notification :off
